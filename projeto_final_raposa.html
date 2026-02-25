@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>giant fox · eyes follow mouse</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            cursor: none; /* cleaner look, but mouse still works – optional */
+        }
+        body {
+            background: linear-gradient(145deg, #1a2f3f 0%, #2d4a5e 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+        }
+        /* giant canvas wrapper — fox fills most of the viewport */
+        .fox-chamber {
+            width: min(1000px, 95vw);
+            aspect-ratio: 1 / 1; /* keep the fox perfectly square */
+            background: radial-gradient(circle at 30% 30%, #f7e5c2, #dbb88c);
+            border-radius: 40px;
+            box-shadow: 0 30px 40px rgba(0,0,0,0.45), 0 0 0 4px #c49a6c inset, 0 0 0 8px #f3d9b1 inset;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: box-shadow 0.1s ease;
+        }
+        /* SVG fox — giant and crisp */
+        .fox-svg {
+            width: 90%;
+            height: 90%;
+            display: block;
+            filter: drop-shadow(8px 12px 12px rgba(0,0,0,0.3));
+        }
+        /* subtle hint for beginners */
+        .hint {
+            position: fixed;
+            bottom: 18px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(10, 20, 24, 0.7);
+            backdrop-filter: blur(4px);
+            color: #faeacb;
+            padding: 8px 24px;
+            border-radius: 60px;
+            font-size: 1.2rem;
+            letter-spacing: 1px;
+            border: 1px solid #f0cfa0;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            pointer-events: none;
+            font-weight: 500;
+        }
+        .hint span {
+            display: inline-block;
+            animation: subtleWink 3s infinite;
+        }
+        @keyframes subtleWink {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            2% { opacity: 0.9; transform: scale(1.02); }
+            96% { opacity: 1; transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+    <div class="fox-chamber">
+        <!--
+            GIANT FOX – constructed with SVG.
+            Both pupils (left and right) are separate <circle> elements,
+            they will be rotated/moved via JavaScript relative to the iris centers.
+            The eyes are big, glossy, and the fox is undeniably giant.
+        -->
+        <svg class="fox-svg" viewBox="0 0 400 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- background warm shape (not necessary but adds fluff) -->
+            
+            <!-- 🦊 MAIN FACE (giant fox head) -->
+            <!-- right ear (fox's right) -->
+            <path d="M275 85 L310 28 L340 60 L320 95 L295 100 Z" fill="#b84a2c" stroke="#6b2e1a" stroke-width="4"/>
+            <path d="M290 70 L305 45 L325 70 L307 80 Z" fill="#d97b4a" stroke="#9b421e" stroke-width="2"/>
+            <!-- left ear (fox's left) -->
+            <path d="M125 85 L90 28 L60 60 L80 95 L105 100 Z" fill="#b84a2c" stroke="#6b2e1a" stroke-width="4"/>
+            <path d="M110 70 L95 45 L75 70 L93 80 Z" fill="#d97b4a" stroke="#9b421e" stroke-width="2"/>
+            
+            <!-- main head (orange-red) -->
+            <ellipse cx="200" cy="180" rx="120" ry="115" fill="#d95f2b" stroke="#9a3324" stroke-width="6"/>
+            <!-- cheeks / jaw highlight -->
+            <path d="M120 210 Q160 250, 200 250 Q240 250, 280 210" stroke="#b8431a" stroke-width="4" fill="#f3844f" opacity="0.7"/>
+            
+            <!-- white muzzle area -->
+            <ellipse cx="200" cy="210" rx="70" ry="40" fill="#fae6cf" stroke="#bc6f42" stroke-width="3"/>
+            <!-- nose (black and cute) -->
+            <circle cx="200" cy="220" r="22" fill="#2b1a0e" stroke="#551f0c" stroke-width="3"/>
+            <circle cx="200" cy="218" r="8" fill="#554433" opacity="0.4"/>
+            <circle cx="200" cy="215" r="4" fill="#ffffee" opacity="0.6"/>
+            
+            <!-- left eye white (sclera) -->
+            <circle cx="150" cy="150" r="28" fill="#fcf9f2" stroke="#24201c" stroke-width="3"/>
+            <!-- iris left (dark) -->
+            <circle cx="150" cy="150" r="17" fill="#6b4f32" stroke="#34281b" stroke-width="2"/>
+            <!-- *pupil left* (black) — this will follow mouse -->
+            <circle id="leftPupil" cx="150" cy="150" r="9" fill="#0a0a0a" stroke="#643a1e" stroke-width="1"/>
+            <!-- eye sparkle (stationary, adds life) -->
+            <circle cx="144" cy="142" r="3.5" fill="#fffefa"/>
+            
+            <!-- right eye white (sclera) -->
+            <circle cx="250" cy="150" r="28" fill="#fcf9f2" stroke="#24201c" stroke-width="3"/>
+            <!-- iris right (dark) -->
+            <circle cx="250" cy="150" r="17" fill="#6b4f32" stroke="#34281b" stroke-width="2"/>
+            <!-- *pupil right* (black) — mouse follower -->
+            <circle id="rightPupil" cx="250" cy="150" r="9" fill="#0a0a0a" stroke="#643a1e" stroke-width="1"/>
+            <circle cx="244" cy="142" r="3.5" fill="#fffefa"/>
+            
+            <!-- inner ear fluff (both sides) -->
+            <circle cx="125" cy="67" r="18" fill="#f7bf9b" opacity="0.9"/>
+            <circle cx="275" cy="67" r="18" fill="#f7bf9b" opacity="0.9"/>
+            
+            <!-- little eyebrow accents (makes it friendlier) -->
+            <path d="M118 115 Q135 95, 160 108" stroke="#3f1f10" stroke-width="4" fill="none" stroke-linecap="round"/>
+            <path d="M282 115 Q265 95, 240 108" stroke="#3f1f10" stroke-width="4" fill="none" stroke-linecap="round"/>
+            
+            <!-- freckles / whisker dots (optional charm) -->
+            <circle cx="170" cy="235" r="2.5" fill="#a65327"/>
+            <circle cx="230" cy="235" r="2.5" fill="#a65327"/>
+        </svg>
+    </div>
+    <div class="hint">
+        <span>🦊</span>  move your mouse – the fox watches  <span>👀</span>
+    </div>
+
+    <script>
+        (function() {
+            "use strict";
+
+            // ---- get the two pupils (black circles) ----
+            const leftPupil = document.getElementById('leftPupil');
+            const rightPupil = document.getElementById('rightPupil');
+
+            // ---- eye center coordinates (where the iris/pupil naturally sits) ----
+            // left eye center (cx, cy) = (150, 150) in SVG viewBox units
+            const leftEye = { cx: 150, cy: 150 };
+            // right eye center (cx, cy) = (250, 150)
+            const rightEye = { cx: 250, cy: 150 };
+
+            // ---- movement radius: how far pupils can wander from center ----
+            // stay inside the iris (iris radius = 17, pupil radius = 9, safe offset ~7)
+            const maxRadius = 7;  // keeps pupil well within dark iris
+
+            // ---- track last mouse position in SVG coordinates ----
+            let mouseViewboxPoint = { x: 200, y: 150 }; // default somewhere neutral
+
+            // ---- helper: get mouse position relative to the SVG, transformed to viewBox coordinates ----
+            function updateMouseInSVG(event) {
+                const svg = document.querySelector('.fox-svg');
+                if (!svg) return;
+
+                // Get SVG's bounding box in screen pixels
+                const rect = svg.getBoundingClientRect();
+
+                // Calculate percentage / relative position within the SVG element
+                const relativeX = (event.clientX - rect.left) / rect.width;  // 0..1
+                const relativeY = (event.clientY - rect.top) / rect.height;  // 0..1
+
+                // viewBox dimensions: 0 0 400 400
+                const viewBoxWidth = 400;
+                const viewBoxHeight = 400;
+
+                // map to viewBox coordinates
+                const svgX = relativeX * viewBoxWidth;
+                const svgY = relativeY * viewBoxHeight;
+
+                // clamp values to keep within viewBox (just for safety, but mouse can go outside)
+                mouseViewboxPoint.x = Math.min(viewBoxWidth, Math.max(0, svgX));
+                mouseViewboxPoint.y = Math.min(viewBoxHeight, Math.max(0, svgY));
+
+                movePupils();
+            }
+
+            // ---- move both pupils based on mouse direction ----
+            function movePupils() {
+                if (!leftPupil || !rightPupil) return;
+
+                // ---- LEFT pupil ----
+                const leftDeltaX = mouseViewboxPoint.x - leftEye.cx;
+                const leftDeltaY = mouseViewboxPoint.y - leftEye.cy;
+                const leftDistance = Math.hypot(leftDeltaX, leftDeltaY);
+
+                let leftOffsetX = 0, leftOffsetY = 0;
+                if (leftDistance > 0.01) {
+                    const leftRatio = Math.min(maxRadius, leftDistance) / leftDistance; // scale if beyond radius
+                    leftOffsetX = leftDeltaX * leftRatio;
+                    leftOffsetY = leftDeltaY * leftRatio;
+                }
+                // apply new pupil position (relative to eye center)
+                leftPupil.setAttribute('cx', leftEye.cx + leftOffsetX);
+                leftPupil.setAttribute('cy', leftEye.cy + leftOffsetY);
+
+                // ---- RIGHT pupil ----
+                const rightDeltaX = mouseViewboxPoint.x - rightEye.cx;
+                const rightDeltaY = mouseViewboxPoint.y - rightEye.cy;
+                const rightDistance = Math.hypot(rightDeltaX, rightDeltaY);
+
+                let rightOffsetX = 0, rightOffsetY = 0;
+                if (rightDistance > 0.01) {
+                    const rightRatio = Math.min(maxRadius, rightDistance) / rightDistance;
+                    rightOffsetX = rightDeltaX * rightRatio;
+                    rightOffsetY = rightDeltaY * rightRatio;
+                }
+                rightPupil.setAttribute('cx', rightEye.cx + rightOffsetX);
+                rightPupil.setAttribute('cy', rightEye.cy + rightOffsetY);
+            }
+
+            // ---- listen to mousemove on the whole window ----
+            window.addEventListener('mousemove', function(event) {
+                updateMouseInSVG(event);
+            });
+
+            // ---- also update if mouse leaves and re-enters, we want to keep pupils responsive ----
+            // optional: tiny default if mouse leaves window? no, last known position is fine.
+            // but we can reset to center when mouse leaves document? better keep last position.
+            // For a beginner project, this works nicely.
+
+            // ---- ensure pupils are centered on page load (just in case) ----
+            window.addEventListener('load', function() {
+                // set a default neutral mouse target (center of fox face)
+                mouseViewboxPoint.x = 200;
+                mouseViewboxPoint.y = 180; // near nose, makes pupils look forward
+                movePupils();
+
+                // if user never moves mouse, fox looks slightly downward (cute)
+            });
+
+            // ---- also when window resizes, mouse position may become stale, but we keep last known.
+            // optionally could reset, but we just keep.
+            // However, if you hover and resize, no big deal.
+            // For extra smoothness, we recalc if mouse enters again — already handled by mousemove.
+        })();
+    </script>
+</body>
+</html>
