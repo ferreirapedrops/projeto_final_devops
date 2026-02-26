@@ -4,15 +4,18 @@ stages:
   - test
 
 variables:
-  IMAGE_NAME: "$CI_REGISTRY_IMAGE:ci-$CI_COMMIT_SHORT_SHA"
-  SITE_DIR: "."   # muda para "docs" se o index.html estiver em docs/, ou "site" se estiver em site/
+  SITE_DIR: "."          # muda para "docs" se o index.html estiver em docs/
+  DOCKER_TLS_CERTDIR: "" # necessário para docker:dind em muitos runners
 
 validate:
   stage: validate
   image: alpine:3.20
   script:
-    - echo "Checking site folder: $SITE_DIR"
-    - test -f "$SITE_DIR/index.html" || (echo "ERROR: $SITE_DIR/index.html not found" && exit 1)
+    - echo "Repo root:"
+    - ls -la
+    - echo "Checking for index.html in: $SITE_DIR"
+    - ls -la "$SITE_DIR"
+    - test -f "$SITE_DIR/index.html"
     - echo "OK: index.html found"
 
 docker_build:
@@ -20,28 +23,19 @@ docker_build:
   image: docker:27
   services:
     - docker:27-dind
-  variables:
-    DOCKER_TLS_CERTDIR: "/certs"
   script:
     - docker info
-    - docker build -t "$IMAGE_NAME" .
-    # opcional: push para o registry do GitLab (precisa login)
-    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
-    - docker push "$IMAGE_NAME"
+    - docker build -t site:ci .
 
 smoke_test:
   stage: test
   image: docker:27
   services:
     - docker:27-dind
-  variables:
-    DOCKER_TLS_CERTDIR: "/certs"
   script:
-    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
-    - docker pull "$IMAGE_NAME"
-    - docker run -d --name web -p 8080:80 "$IMAGE_NAME"
+    - docker run -d --name web -p 8080:80 site:ci
     - sleep 2
     - docker ps
-    - docker exec web wget -qO- http://localhost:80 | head -n 5
+    - docker exec web wget -qO- http://localhost:80 | head -n 15
   after_script:
     - docker rm -f web || true
