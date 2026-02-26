@@ -3,39 +3,38 @@ stages:
   - build
   - test
 
-variables:
-  SITE_DIR: "."          # muda para "docs" se o index.html estiver em docs/
-  DOCKER_TLS_CERTDIR: "" # necessário para docker:dind em muitos runners
-
 validate:
   stage: validate
   image: alpine:3.20
-  script:
-    - echo "Repo root:"
-    - ls -la
-    - echo "Checking for index.html in: $SITE_DIR"
-    - ls -la "$SITE_DIR"
-    - test -f "$SITE_DIR/index.html"
-    - echo "OK: index.html found"
+  script: |
+    echo "Repo root:"
+    ls -la
+    echo "Checking index.html in repo root..."
+    test -f ./index.html
+    echo "OK: index.html found"
 
 docker_build:
   stage: build
   image: docker:27
   services:
     - docker:27-dind
-  script:
-    - docker info
-    - docker build -t site:ci .
+  variables:
+    DOCKER_TLS_CERTDIR: ""
+  script: |
+    docker info
+    docker build -t site:ci .
 
 smoke_test:
   stage: test
   image: docker:27
   services:
     - docker:27-dind
-  script:
-    - docker run -d --name web -p 8080:80 site:ci
-    - sleep 2
-    - docker ps
-    - docker exec web wget -qO- http://localhost:80 | head -n 15
-  after_script:
-    - docker rm -f web || true
+  variables:
+    DOCKER_TLS_CERTDIR: ""
+  script: |
+    docker run -d --name web -p 8080:80 site:ci
+    sleep 2
+    docker ps
+    docker exec web wget -qO- http://localhost:80 | head -n 15
+  after_script: |
+    docker rm -f web || true
